@@ -26,6 +26,7 @@ import android.widget.ListAdapter;
 
 import com.andtinder.R;
 import com.andtinder.model.CardModel;
+import com.andtinder.model.FlingDirections.FlingDirection;
 import com.andtinder.model.Orientations.Orientation;
 
 import java.util.Random;
@@ -69,10 +70,13 @@ public class CardContainer extends AdapterView<ListAdapter> {
 	private int mNextAdapterPosition;
 	private boolean mDragging;
 
+	private FlingDirection mFlingDirection;
+
 	public CardContainer(Context context) {
 		super(context);
 
         setOrientation(Orientation.Disordered);
+		setFlingDirection(FlingDirection.Horizontal);
 		setGravity(Gravity.CENTER);
 		init();
 
@@ -105,6 +109,9 @@ public class CardContainer extends AdapterView<ListAdapter> {
 		setGravity(a.getInteger(R.styleable.CardContainer_android_gravity, Gravity.CENTER));
 		int orientation = a.getInteger(R.styleable.CardContainer_orientation, 1);
 		setOrientation(Orientation.fromIndex(orientation));
+
+		int direction = a.getInteger(R.styleable.CardContainer_fling_direction, 0);
+		setFlingDirection(FlingDirection.fromIndex(direction));
 
 		a.recycle();
 	}
@@ -400,6 +407,14 @@ public class CardContainer extends AdapterView<ListAdapter> {
 		mGravity = gravity;
 	}
 
+	public void setFlingDirection(FlingDirection flingDirection) {
+		this.mFlingDirection = flingDirection;
+	}
+
+	public FlingDirection getFlingDirection() {
+		return mFlingDirection;
+	}
+
 	public static class LayoutParams extends ViewGroup.LayoutParams {
 
 		int viewType;
@@ -427,10 +442,7 @@ public class CardContainer extends AdapterView<ListAdapter> {
 		public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
 			Log.d("Fling", "Fling with " + velocityX + ", " + velocityY);
 			final View topCard = mTopCard;
-			float dx = e2.getX() - e1.getX();
-			if (Math.abs(dx) > mTouchSlop &&
-					Math.abs(velocityX) > Math.abs(velocityY) &&
-					Math.abs(velocityX) > mFlingSlop * 3) {
+			if (gestureDetected(e1, e2, velocityX, velocityY)) {
 				float targetX = topCard.getX();
 				float targetY = topCard.getY();
 				long duration = 0;
@@ -451,13 +463,13 @@ public class CardContainer extends AdapterView<ListAdapter> {
 				if(mTopCard != null)
 					mTopCard.setLayerType(LAYER_TYPE_HARDWARE, null);
 
-                if (cardModel.getOnCardDimissedListener() != null) {
-                    if ( targetX > 0 ) {
-                        cardModel.getOnCardDimissedListener().onDislike();
-                    } else {
-                        cardModel.getOnCardDimissedListener().onLike();
-                    }
-                }
+				if (cardModel.getOnCardDimissedListener() != null) {
+					if (isDislike(targetX,targetY)) {
+						cardModel.getOnCardDimissedListener().onDislike();
+					} else {
+						cardModel.getOnCardDimissedListener().onLike();
+					}
+				}
 
 				topCard.animate()
 						.setDuration(duration)
@@ -479,8 +491,40 @@ public class CardContainer extends AdapterView<ListAdapter> {
 							}
 						});
 				return true;
-			} else
+			} else {
 				return false;
+			}
+		}
+
+		private boolean gestureDetected(MotionEvent e1, MotionEvent e2, float velocityX,
+				float velocityY) {
+			if (mFlingDirection == FlingDirection.Horizontal) {
+				float dx = e2.getX() - e1.getX();
+				return isGestureHorizontal(dx, velocityX, velocityY);
+			} else {
+				float dy = e2.getY() - e1.getY();
+				return isGestureVertical(dy, velocityX, velocityY);
+			}
+		}
+
+		private boolean isGestureVertical(float dy, float velocityX, float velocityY) {
+			return Math.abs(dy) > mTouchSlop &&
+					Math.abs(velocityY) > Math.abs(velocityX) &&
+					Math.abs(velocityY) > mFlingSlop * 3;
+		}
+
+		private boolean isGestureHorizontal(float dx, float velocityX, float velocityY) {
+			return Math.abs(dx) > mTouchSlop &&
+					Math.abs(velocityX) > Math.abs(velocityY) &&
+					Math.abs(velocityX) > mFlingSlop * 3;
+		}
+
+		private boolean isDislike(float targetX, float targetY) {
+			if (mFlingDirection == FlingDirection.Horizontal) {
+				return targetX > 0;
+			}else {
+				return targetY > 0;
+			}
 		}
 	}
 }
