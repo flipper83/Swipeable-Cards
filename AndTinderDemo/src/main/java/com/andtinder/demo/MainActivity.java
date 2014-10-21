@@ -21,8 +21,10 @@ import android.app.Activity;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Window;
+import android.view.Menu;
+import android.view.MenuItem;
 import com.andtinder.model.CardModel;
+import com.andtinder.model.FlingDirections;
 import com.andtinder.view.CardContainer;
 import com.andtinder.view.SimpleCardStackAdapter;
 
@@ -36,7 +38,6 @@ public class MainActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.mainlayout);
 
 		mCardContainer = (CardContainer) findViewById(R.id.layoutview);
@@ -128,5 +129,32 @@ public class MainActivity extends Activity {
 		adapter.add(cardModel);
 
 		mCardContainer.setAdapter(adapter);
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.menu, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// Handle action bar item clicks here. The action bar will
+		// automatically handle clicks on the Home/Up button, so long
+		// as you specify a parent activity in AndroidManifest.xml.
+		int id = item.getItemId();
+		if (id == R.id.action_change_fling_orientation) {
+			if (mCardContainer.getFlingDirection() == FlingDirections.FlingDirection.Horizontal) {
+				mCardContainer.setFlingDirection(FlingDirections.FlingDirection.Vertical);
+				item.setTitle(R.string.action_horizontal);
+			} else {
+				mCardContainer.setFlingDirection(FlingDirections.FlingDirection.Horizontal);
+				item.setTitle(R.string.action_vertical);
+			}
+
+			return true;
+		}
+		return super.onOptionsItemSelected(item);
 	}
 }

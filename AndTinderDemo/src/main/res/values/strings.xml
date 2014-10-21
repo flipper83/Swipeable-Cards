@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">TinderCard</string>
+	<string name="action_vertical">Vertical</string>
+	<string name="action_horizontal">Horizontal</string>
 </resources>
